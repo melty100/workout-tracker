@@ -10,7 +10,11 @@ module.exports = function(app) {
 
     });
 
-    app.post("api/workouts", function(res, req) {
+    app.put("api/workouts/:id", function(res, req) {
+
+    });
+
+    app.get("api/workouts/range", function(res, req) {
 
     });
 }
