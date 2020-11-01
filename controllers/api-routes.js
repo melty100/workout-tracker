@@ -1,15 +1,17 @@
 var path = require("path");
-const { Workout, Exercise } = require("../models");
-//const { db } = require("../models");
+const {Workout} = require("../models");
 
 module.exports = function (app) {
 
     app.get("/api/workouts", function (req, res) {
 
-        Workout.find({})
-        .then(dbWorkout => {
-            console.log(dbWorkout);
-            res.json(dbWorkout);
+        Workout.find({}).sort({day: -1}).limit(1)
+        .then(data => {
+
+            w = data[0];
+            w.totalDuration = w.exercises.reduce((tot, ex) => {return tot + ex.duration;}, 0);
+
+            res.json(data);
         })
         .catch(({message}) => {
             console.log(message);
@@ -17,10 +19,9 @@ module.exports = function (app) {
     });
 
     //Creates a new workout
-    app.post("/api/workouts", async function (req, res) {
-        Workout.create({ name: "", day: Date.now()})
+    app.post("/api/workouts", function (req, res) {
+        Workout.create({day: new Date().setDate(new Date().getDate())})
             .then(dbWorkout => {
-                console.log(dbWorkout);
                 res.json(dbWorkout);
             })
             .catch(({ message }) => {
@@ -29,22 +30,20 @@ module.exports = function (app) {
     });
 
     //Creates a new exercise and updates a workout with it
-    app.put("/api/workouts/:id", function ({ body }, res) {
-        
-        let ex = new Exercise(body);
+    app.put("/api/workouts/:id", function (req, res) {
 
-        console.log(body);
-        console.log(ex);
+        console.log(req.body);
+        console.log(req.params.id);
 
-        Exercise.create(ex)
-        .then(({_id}) => {
-            Workout.findOneAndUpdate({}, {$push: {exercises: _id}}, {new: true})
-        })
+        Workout.findOneAndUpdate({_id: req.params.id}, {$push: {exercises: req.body}}, {new: true})
         .then(dbWorkout => {
+
+            dbWorkout.totalDuration = dbWorkout.exercises.reduce((tot, ex) => {return tot + ex.duration}, 0);
+
             res.json(dbWorkout);
         })
         .catch(err => {
-            res.json(err);
+            console.log(err);
         });
     });
 
